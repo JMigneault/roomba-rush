@@ -28,7 +28,7 @@ void Update()
     }
 
 
-void GetHit(Vector3 vector, float time)
+public void GetHit(Vector3 vector, float time)
     {
         externalVelocity = vector;
         ragdollTimer = time * Time.deltaTime;
@@ -71,7 +71,7 @@ void GetHit(Vector3 vector, float time)
             }
             else
             {
-                GetHit(Vector3.right);
+                GetHit(Vector3.right, 1f);
                 currentState = roombaState.Hit_Ragdoll;
             }
 
