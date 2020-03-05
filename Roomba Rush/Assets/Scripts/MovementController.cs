@@ -2,94 +2,117 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum RoombaState
+{
+    Spinning,
+    Moving,
+    Ragdolling
+}
+
+
 public class MovementController : MonoBehaviour
 {
-    public enum roombaState
-    {
-        Spinning,
-        Moving,
-        Hit_Ragdoll
-    }
-    Vector3 externalVelocity;
-    roombaState currentState;
-    float ragdollTimer;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        currentState = roombaState.Spinning;
-    }
+    // public roomba parameters to be set in inspector
+    public float moveSpeed;
+    public float ragdollSpeed;
+    public float ragdollDecay;
+    public float spinSpeed;
 
-// Update is called once per frame
-void Update()
-    {
-        Movement();
-        DebugMovementChange();
-    }
+    // public collision parameters to be set in inspector
+    public float wallCollisionTime;
+    public float roombaCollisionTime;
 
 
-public void GetHit(Vector3 vector, float time)
-    {
-        externalVelocity = vector;
-        ragdollTimer = time * Time.deltaTime;
-        currentState = roombaState.Hit_Ragdoll;
+    // set up controls for this roomba in inspector
+    public KeyCode stopSpinningKey;
+
+    // saved initial roomba parameters
+    private float initRagdollSpeed;
+
+    // internal state params
+    private RoombaState state;
+    private Vector2 velocityDirection;
+    private float ragdollTimer;
+
+    void Start() {
+        initRagdollSpeed = ragdollSpeed;
     }
-    void Movement()
+    void Update()
     {
-        switch (currentState)
+        switch (state)
         {
-            case roombaState.Hit_Ragdoll:
-                RagdollMovement();
+            case RoombaState.Spinning:
+                Spin();
                 break;
-            case roombaState.Spinning:
-                gameObject.transform.Rotate(0, 0, .25f, Space.Self);
+            case RoombaState.Moving:
+                Move();
                 break;
-            case roombaState.Moving:
-                gameObject.transform.position += transform.up * Time.deltaTime;
+            case RoombaState.Ragdolling:
+                Ragdoll();
                 break;
         }
     }
 
-    void DebugMovementChange()
+    void Spin()
     {
-        if (Input.GetKeyDown(KeyCode.A))
+        transform.Rotate(0, 0, spinSpeed * Time.deltaTime, Space.Self);
+        if (Input.GetKeyDown(stopSpinningKey))
         {
-            if (currentState == roombaState.Moving)
-            {
-                currentState = roombaState.Spinning;
-            }
-            else if (currentState == roombaState.Spinning)
-            {
-                currentState = roombaState.Moving;
-            }
-        }
-        else if (Input.GetKeyDown(KeyCode.D))
-        {   
-            if (currentState == roombaState.Hit_Ragdoll)
-            {
-                currentState = roombaState.Spinning;
-            }
-            else
-            {
-                GetHit(Vector3.right, 1f);
-                currentState = roombaState.Hit_Ragdoll;
-            }
-
+            velocityDirection = transform.up;
+            state = RoombaState.Moving;
         }
     }
-    void RagdollMovement()
+
+    void Move()
     {
-        if (ragdollTimer != 0)
-        {
-            ragdollTimer--;
-            gameObject.transform.position += 10f * externalVelocity * Time.deltaTime;
-        }
-        else
-        {
-            currentState = roombaState.Spinning;
-        }
-
-
+        transform.Translate(velocityDirection * moveSpeed * Time.deltaTime, Space.World);
     }
+
+    void Ragdoll()
+    {
+        transform.Translate(velocityDirection * ragdollSpeed * Time.deltaTime, Space.World);
+        ragdollSpeed = Mathf.Max(ragdollSpeed - Time.deltaTime * ragdollDecay, 0);
+        ragdollTimer -= Time.deltaTime;
+        if (ragdollTimer < 0 || ragdollSpeed == 0)
+        {
+            ragdollSpeed = initRagdollSpeed;
+            state = RoombaState.Spinning;
+            velocityDirection = Vector2.zero; // should not be used while spinning
+        }
+    }
+
+    public void Hit(Vector2 direction, float time)
+    {
+        state = RoombaState.Ragdolling;
+        velocityDirection = direction.normalized;
+        ragdollTimer = time;
+    }
+
+    void OnTriggerEnter2D(Collider2D collision) {
+        switch(collision.transform.tag) {
+            case "HorzWall":
+                Hit(new Vector2(velocityDirection.x, -velocityDirection.y), wallCollisionTime);
+                break;
+            case "VertWall":
+                Hit(new Vector2(-velocityDirection.x, velocityDirection.y), wallCollisionTime);
+                break;
+            case "Roomba":
+                // both roombas will get here so we break the tie on who computes collision using instance IDs
+                if (transform.GetInstanceID() > collision.transform.GetInstanceID()) {
+                    // todo - elastic collision
+                }
+                break;
+            case "Weapon":
+                Hit(collision.transform.up, collision.transform.GetComponent<Weapon>().hitTime); // rebound self
+                Hit(-collision.transform.up, collision.transform.GetComponent<Weapon>().reboundTime); // rebound other roomba
+                break;
+            default:
+                Debug.Log("Roomba collision did not detect tag: " + collision.transform.tag);
+                break;
+        }
+    }
+
+
 }
 
