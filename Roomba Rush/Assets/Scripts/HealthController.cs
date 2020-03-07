@@ -4,15 +4,39 @@ using UnityEngine;
 
 public class HealthController : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    public float initialHealth;
+
+    private float health;
+    // tood: alert game manager off death
+    public float Health
     {
-        
+        get { return health; }
+        set
+        {
+            Debug.Log("new health" + value);
+            health = value;
+        }
     }
 
-    // Update is called once per frame
+    void Start()
+    {
+        health = initialHealth;
+    }
+
     void Update()
     {
-        
+        if (health < 0)
+        {
+            GameObject.Destroy(this);
+        }
     }
+
+    void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (this.GetComponentInChildren<Weapon>() != collision.GetComponent<Weapon>())
+        {
+            Health -= collision.transform.GetComponent<Weapon>().damage;
+        }
+    }
+
 }

@@ -122,44 +122,27 @@ public class MovementController : MonoBehaviour
                 Hit(new Vector2(velocityDirection.x, -velocityDirection.y), wallCollisionTime);
                 break;
             case "VertWall":
+                Debug.Log("test");
                 Hit(new Vector2(-velocityDirection.x, velocityDirection.y), wallCollisionTime);
                 break;
             case "Roomba":
                 // both roombas will get here so we break the tie on who computes collision using instance IDs
-                Debug.Log("received collision");
                 if (transform.GetInstanceID() > collision.transform.GetInstanceID())
                 {
-                    Debug.Log("simulating collision");
                     // reference on elastic collisions between 2 hard spheres here: https://introcs.cs.princeton.edu/java/assignments/collisions.html
                     MovementController thatMove = collision.GetComponent<MovementController>();
                     float R = (GetComponent<CircleCollider2D>().radius + thatMove.GetComponent<CircleCollider2D>().radius) * 10; // todo remove scale factor
-                    Debug.Log("r1 + r2");
-                    Debug.Log(R);
                     float thisM = thatMove.mass;
                     float thatM = thatMove.mass;
                     Vector2 dP = thatMove.transform.position - this.transform.position;
                     Vector2 thisV = this.Velocity;
                     Vector2 thatV = thatMove.Velocity;
-                    Debug.Log("this v");
-                    Debug.Log(thisV);
-                    Debug.Log("that v");
-                    Debug.Log(thatV);
                     Vector2 dV = thatV - thisV;
                     float J = 2 * thisM * thatM * (dV.x * dP.x + dV.y * dP.y) / (R * (thisM + thatM));
-                    Debug.Log("impulse:");
-                    Debug.Log(J);
                     float Jx = J * dP.x / R;
                     float Jy = J * dP.y / R;
-                    Debug.Log("impulse x:");
-                    Debug.Log(Jx);
-                    Debug.Log("impulse y:");
-                    Debug.Log(Jy);
                     Vector2 thisNewV = thisV + (new Vector2(Jx / thisM, Jy / thisM));
                     Vector2 thatNewV = thatV - (new Vector2(Jx / thatM, Jy / thatM));
-                    Debug.Log("thisNewV:");
-                    Debug.Log(thisNewV);
-                    Debug.Log("thatNewV:");
-                    Debug.Log(thatNewV);
                     this.Hit(thisNewV.normalized, roombaCollisionTime, thisNewV.magnitude);
                     thatMove.Hit(thatNewV.normalized, roombaCollisionTime, thatNewV.magnitude);
                 }
@@ -167,7 +150,6 @@ public class MovementController : MonoBehaviour
             case "Weapon":
                 if (this.GetComponentInChildren<Weapon>() != collision.GetComponent<Weapon>())
                 {
-                    Debug.Log("weapon collision");
                     Hit(collision.transform.up, collision.transform.GetComponent<Weapon>().hitTime); // rebound self
                     collision.transform.parent.GetComponent<MovementController>().Hit(-collision.transform.up, collision.transform.GetComponent<Weapon>().reboundTime); // rebound other roomba
                 }
