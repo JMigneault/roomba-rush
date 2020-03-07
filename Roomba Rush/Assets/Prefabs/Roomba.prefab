@@ -248,9 +248,10 @@ MonoBehaviour:
   ragdollSpeed: 10
   ragdollDecay: 10
   spinSpeed: 90
-  mass: 1
+  moveDelay: 0.2
   wallCollisionTime: 0.2
   roombaCollisionTime: 0.5
+  mass: 1
   stopSpinningKey: 108
 --- !u!58 &3472435549683717966
 CircleCollider2D:
