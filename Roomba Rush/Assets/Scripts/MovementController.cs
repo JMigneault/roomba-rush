@@ -18,12 +18,13 @@ public class MovementController : MonoBehaviour
     public float ragdollSpeed;
     public float ragdollDecay;
     public float spinSpeed;
-    public float mass;
+    public float moveDelay;
 
 
     // public collision parameters to be set in inspector
     public float wallCollisionTime;
     public float roombaCollisionTime;
+    public float mass;
 
     // set up controls for this roomba in inspector
     public KeyCode stopSpinningKey;
@@ -35,6 +36,7 @@ public class MovementController : MonoBehaviour
     private RoombaState state;
     private Vector2 velocityDirection;
     private float ragdollTimer;
+    private float moveTimer;
 
     // public properties
     public Vector2 Velocity
@@ -79,13 +81,18 @@ public class MovementController : MonoBehaviour
         if (Input.GetKeyDown(stopSpinningKey))
         {
             velocityDirection = transform.up;
+            moveTimer = moveDelay;
             state = RoombaState.Moving;
         }
     }
 
     void Move()
     {
+        if (moveTimer < 0) {
         transform.Translate(velocityDirection * moveSpeed * Time.deltaTime, Space.World);
+        } else {
+            moveTimer -= Time.deltaTime;
+        }
     }
 
     void Ragdoll()

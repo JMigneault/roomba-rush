@@ -920,6 +920,11 @@ PrefabInstance:
       propertyPath: stopSpinningKey
       value: 97
       objectReference: {fileID: 0}
+    - target: {fileID: 3472435549683717971, guid: c8d6d85ab858a3f4287c750cbd4a6337,
+        type: 3}
+      propertyPath: moveDelay
+      value: 0.25
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c8d6d85ab858a3f4287c750cbd4a6337, type: 3}
 --- !u!1001 &133791230696008090
