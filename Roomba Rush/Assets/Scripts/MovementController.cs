@@ -18,11 +18,12 @@ public class MovementController : MonoBehaviour
     public float ragdollSpeed;
     public float ragdollDecay;
     public float spinSpeed;
+    public float mass;
+
 
     // public collision parameters to be set in inspector
     public float wallCollisionTime;
     public float roombaCollisionTime;
-
 
     // set up controls for this roomba in inspector
     public KeyCode stopSpinningKey;
@@ -35,7 +36,25 @@ public class MovementController : MonoBehaviour
     private Vector2 velocityDirection;
     private float ragdollTimer;
 
-    void Start() {
+    // public properties
+    public Vector2 Velocity
+    {
+        get
+        {
+            switch (this.state)
+            {
+                case RoombaState.Moving:
+                    return velocityDirection * moveSpeed;
+                case RoombaState.Ragdolling:
+                    return velocityDirection * ragdollSpeed;
+                default:
+                    return Vector2.zero;
+            }
+        }
+    }
+
+    void Start()
+    {
         initRagdollSpeed = ragdollSpeed;
     }
     void Update()
@@ -82,15 +101,23 @@ public class MovementController : MonoBehaviour
         }
     }
 
-    public void Hit(Vector2 direction, float time)
+    public void Hit(Vector2 direction, float time, float startSpeed)
     {
         state = RoombaState.Ragdolling;
         velocityDirection = direction.normalized;
+        ragdollSpeed = startSpeed;
         ragdollTimer = time;
     }
 
-    void OnTriggerEnter2D(Collider2D collision) {
-        switch(collision.transform.tag) {
+    public void Hit(Vector2 direction, float time)
+    {
+        this.Hit(direction, time, ragdollSpeed);
+    }
+
+    void OnTriggerEnter2D(Collider2D collision)
+    {
+        switch (collision.transform.tag)
+        {
             case "HorzWall":
                 Hit(new Vector2(velocityDirection.x, -velocityDirection.y), wallCollisionTime);
                 break;
@@ -99,13 +126,51 @@ public class MovementController : MonoBehaviour
                 break;
             case "Roomba":
                 // both roombas will get here so we break the tie on who computes collision using instance IDs
-                if (transform.GetInstanceID() > collision.transform.GetInstanceID()) {
-                    // todo - elastic collision
+                Debug.Log("received collision");
+                if (transform.GetInstanceID() > collision.transform.GetInstanceID())
+                {
+                    Debug.Log("simulating collision");
+                    // reference on elastic collisions between 2 hard spheres here: https://introcs.cs.princeton.edu/java/assignments/collisions.html
+                    MovementController thatMove = collision.GetComponent<MovementController>();
+                    float R = (GetComponent<CircleCollider2D>().radius + thatMove.GetComponent<CircleCollider2D>().radius) * 10; // todo remove scale factor
+                    Debug.Log("r1 + r2");
+                    Debug.Log(R);
+                    float thisM = thatMove.mass;
+                    float thatM = thatMove.mass;
+                    Vector2 dP = thatMove.transform.position - this.transform.position;
+                    Vector2 thisV = this.Velocity;
+                    Vector2 thatV = thatMove.Velocity;
+                    Debug.Log("this v");
+                    Debug.Log(thisV);
+                    Debug.Log("that v");
+                    Debug.Log(thatV);
+                    Vector2 dV = thatV - thisV;
+                    float J = 2 * thisM * thatM * (dV.x * dP.x + dV.y * dP.y) / (R * (thisM + thatM));
+                    Debug.Log("impulse:");
+                    Debug.Log(J);
+                    float Jx = J * dP.x / R;
+                    float Jy = J * dP.y / R;
+                    Debug.Log("impulse x:");
+                    Debug.Log(Jx);
+                    Debug.Log("impulse y:");
+                    Debug.Log(Jy);
+                    Vector2 thisNewV = thisV + (new Vector2(Jx / thisM, Jy / thisM));
+                    Vector2 thatNewV = thatV - (new Vector2(Jx / thatM, Jy / thatM));
+                    Debug.Log("thisNewV:");
+                    Debug.Log(thisNewV);
+                    Debug.Log("thatNewV:");
+                    Debug.Log(thatNewV);
+                    this.Hit(thisNewV.normalized, roombaCollisionTime, thisNewV.magnitude);
+                    thatMove.Hit(thatNewV.normalized, roombaCollisionTime, thatNewV.magnitude);
                 }
                 break;
             case "Weapon":
-                Hit(collision.transform.up, collision.transform.GetComponent<Weapon>().hitTime); // rebound self
-                Hit(-collision.transform.up, collision.transform.GetComponent<Weapon>().reboundTime); // rebound other roomba
+                if (this.GetComponentInChildren<Weapon>() != collision.GetComponent<Weapon>())
+                {
+                    Debug.Log("weapon collision");
+                    Hit(collision.transform.up, collision.transform.GetComponent<Weapon>().hitTime); // rebound self
+                    collision.transform.parent.GetComponent<MovementController>().Hit(-collision.transform.up, collision.transform.GetComponent<Weapon>().reboundTime); // rebound other roomba
+                }
                 break;
             default:
                 Debug.Log("Roomba collision did not detect tag: " + collision.transform.tag);
