@@ -122,7 +122,6 @@ public class MovementController : MonoBehaviour
                 Hit(new Vector2(velocityDirection.x, -velocityDirection.y), wallCollisionTime);
                 break;
             case "VertWall":
-                Debug.Log("test");
                 Hit(new Vector2(-velocityDirection.x, velocityDirection.y), wallCollisionTime);
                 break;
             case "Roomba":
@@ -155,7 +154,7 @@ public class MovementController : MonoBehaviour
                 }
                 break;
             default:
-                Debug.Log("Roomba collision did not detect tag: " + collision.transform.tag);
+                Debug.Log("Roomba collision did not recognize tag: " + collision.transform.tag);
                 break;
         }
     }

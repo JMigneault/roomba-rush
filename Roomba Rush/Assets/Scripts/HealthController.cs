@@ -27,16 +27,23 @@ public class HealthController : MonoBehaviour
     {
         if (health < 0)
         {
-            GameObject.Destroy(this);
+            GameObject.Destroy(this.gameObject);
         }
     }
 
     void OnTriggerEnter2D(Collider2D collision)
     {
-        if (this.GetComponentInChildren<Weapon>() != collision.GetComponent<Weapon>())
+        switch (collision.transform.tag)
         {
-            Health -= collision.transform.GetComponent<Weapon>().damage;
-        }
+            case "Weapon":
+                if (this.GetComponentInChildren<Weapon>() != collision.GetComponent<Weapon>())
+                {
+                    Health -= collision.transform.GetComponent<Weapon>().damage;
+                }
+                break;
+            default:
+                break;
+        }  
     }
 
 }
